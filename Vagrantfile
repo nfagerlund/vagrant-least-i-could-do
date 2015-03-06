@@ -45,5 +45,6 @@ Vagrant.configure(2) do |config|
     sudo wget http://nightlies.puppetlabs.com/puppet-agent-latest/repo_configs/rpm/pl-puppet-agent-latest-el-7-x86_64.repo
     sudo wget http://nightlies.puppetlabs.com/puppetserver-latest/repo_configs/rpm/pl-puppetserver-latest-el-7-x86_64.repo
     sudo wget http://nightlies.puppetlabs.com/puppetdb-latest/repo_configs/rpm/pl-puppetdb-latest-el-7-x86_64.repo
+    sudo yum -y install tree vim-enhanced git
   SHELL
 end
