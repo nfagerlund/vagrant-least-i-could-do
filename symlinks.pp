@@ -14,3 +14,8 @@
   }
 
 }
+
+file {"/usr/bin/r10k":
+  ensure => link,
+  target => "/opt/puppetlabs/puppet/bin/r10k",
+}
