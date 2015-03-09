@@ -40,3 +40,5 @@ EVERYWHERE
 
 - Get ssl certs signed
 - Do a barrel roll ^H^H^H^H puppet run
+
+On the master, you can run `sudo trash_envs` to ping the environment-cache endpoint.
