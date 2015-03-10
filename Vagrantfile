@@ -33,7 +33,7 @@ Vagrant.configure(2) do |config|
   SHELL
 
   # master install and deploy stuff
-  list_of_agents = (1..agents).to_a.map {|i| "agent#{i}.example.com"}.join("\n")
+  list_of_agents = (1..agents).map {|i| "agent#{i}.example.com"}.join("\n")
 
   config_master_mid = <<-MASTERMID
     sudo yum -y install puppetserver
@@ -63,10 +63,9 @@ Vagrant.configure(2) do |config|
     config.vm.provision "shell", inline: (config_everyone_pre + config_master_mid + config_master_post)
   end
 
-  agents.times do |i|
-    agent_id = i.next.to_s
-    config.vm.define "agent#{agent_id}" do |node|
-      node.vm.hostname = "agent#{agent_id}.example.com"
+  (1..agents).each do |i|
+    config.vm.define "agent#{i}" do |node|
+      node.vm.hostname = "agent#{i}.example.com"
       config.vm.provision "shell", inline: (config_everyone_pre)
     end
 
