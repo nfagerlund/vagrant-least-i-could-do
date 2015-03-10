@@ -21,35 +21,35 @@ Vagrant.configure(2) do |config|
   # Concat these in order.
   # config fragment for all boxes:
   config_everyone_pre = <<-SHELL
-    sudo service firewalld stop
+    service firewalld stop
     cd /etc/yum.repos.d
-    sudo wget http://nightlies.puppetlabs.com/puppet-agent-latest/repo_configs/rpm/pl-puppet-agent-latest-el-7-x86_64.repo
-    sudo wget http://nightlies.puppetlabs.com/puppetserver-latest/repo_configs/rpm/pl-puppetserver-latest-el-7-x86_64.repo
-    sudo wget http://nightlies.puppetlabs.com/puppetdb-latest/repo_configs/rpm/pl-puppetdb-latest-el-7-x86_64.repo
-    sudo yum -y install tree vim-enhanced git
-    sudo yum -y install puppet-agent
-    sudo /opt/puppetlabs/bin/puppet apply /vagrant/symlinks.pp
-    sudo puppet config set server master.example.com
+    wget http://nightlies.puppetlabs.com/puppet-agent-latest/repo_configs/rpm/pl-puppet-agent-latest-el-7-x86_64.repo
+    wget http://nightlies.puppetlabs.com/puppetserver-latest/repo_configs/rpm/pl-puppetserver-latest-el-7-x86_64.repo
+    wget http://nightlies.puppetlabs.com/puppetdb-latest/repo_configs/rpm/pl-puppetdb-latest-el-7-x86_64.repo
+    yum -y install tree vim-enhanced git
+    yum -y install puppet-agent
+    /opt/puppetlabs/bin/puppet apply /vagrant/symlinks.pp
+    puppet config set server master.example.com
   SHELL
 
   # master install and deploy stuff
   list_of_agents = (1..agents).map {|i| "agent#{i}.example.com"}.join("\n")
 
   config_master_mid = <<-MASTERMID
-    sudo yum -y install puppetserver
-    sudo /opt/puppetlabs/puppet/bin/gem install r10k --no-ri --no-rdoc --verbose
+    yum -y install puppetserver
+    /opt/puppetlabs/puppet/bin/gem install r10k --no-ri --no-rdoc --verbose
 
-    sudo echo "#{list_of_agents}" > /etc/puppetlabs/puppet/autosign.conf
+    echo "#{list_of_agents}" > /etc/puppetlabs/puppet/autosign.conf
 
-    sudo mkdir /var/cache/r10k
-    sudo cp /vagrant/r10k.yaml /etc/r10k.yaml
-    sudo rm -rf /etc/puppetlabs/code/environments/production
-    sudo r10k deploy environment -p
+    mkdir /var/cache/r10k
+    cp /vagrant/r10k.yaml /etc/r10k.yaml
+    rm -rf /etc/puppetlabs/code/environments/production
+    r10k deploy environment -p
   MASTERMID
 
   # hairy master config stuff that needs revision
   config_master_post = <<-MASTERPOST
-    sudo puppet apply /vagrant/master-config-edits.pp
+    puppet apply /vagrant/master-config-edits.pp
   MASTERPOST
 
   # ------------ OK DONE --------------
@@ -60,13 +60,13 @@ Vagrant.configure(2) do |config|
       v.vmx["memsize"] = "2048"
       v.vmx["numvcpus"] = "2"
     end
-    config.vm.provision "shell", inline: (config_everyone_pre + config_master_mid + config_master_post)
+    config.vm.provision "shell", privileged: true, inline: (config_everyone_pre + config_master_mid + config_master_post)
   end
 
   (1..agents).each do |i|
     config.vm.define "agent#{i}" do |node|
       node.vm.hostname = "agent#{i}.example.com"
-      config.vm.provision "shell", inline: (config_everyone_pre)
+      config.vm.provision "shell", privileged: true, inline: (config_everyone_pre)
     end
 
   end
