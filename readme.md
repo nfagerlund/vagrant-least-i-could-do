@@ -30,7 +30,7 @@ puppet apply /etc/puppetlabs/code/environments/production/manifests
 ### Edit config files for basic sense
 
 puppet config set server master.example.com
-vim /etc/puppetlabs/puppetserver/conf.d/web-routes.conf
+vim /etc/puppetlabs/puppetserver/conf.d/puppetserver.conf
     - add "master.example.com" to the puppet-admin cert whitelist (can't wait 'til there's a module for that)
 vim /etc/sysconfig/puppetserver
     - change heap size, otherwise it won't start on this VM. (They're gonna change the defaults, right?)
