@@ -4,6 +4,9 @@
 Vagrant.configure(2) do |config|
   # https://docs.vagrantup.com.
 
+  # How many agents do you want?
+  agents = 1
+
   # boxes at https://vagrantcloud.com/puppetlabs. you want one of the "-nocm" ones.
   config.vm.box = "puppetlabs/centos-7.0-64-nocm"
   # I think this box defaults to 512 MB ram and 1 CPU.
@@ -11,7 +14,50 @@ Vagrant.configure(2) do |config|
   # enable vagrant-hostmanager plugin (vagrant plugin install vagrant-hostmanager)
   config.hostmanager.enabled = true
   # this one lets it manage a fenced-off part of /etc/hosts on your host machine, so you can access your VMs with a web browser or whatevs.
+  # also, the name of this setting is very confusing.
   config.hostmanager.manage_host = true
+
+  # ------------ LET'S PROVISION ---------------
+  # This goes in order, deleting everything not relevant to the role.
+  # config fragment for all boxes:
+  config_everyone_pre = <<-SHELL
+    sudo service firewalld stop
+    cd /etc/yum.repos.d
+    sudo wget http://nightlies.puppetlabs.com/puppet-agent-latest/repo_configs/rpm/pl-puppet-agent-latest-el-7-x86_64.repo
+    sudo wget http://nightlies.puppetlabs.com/puppetserver-latest/repo_configs/rpm/pl-puppetserver-latest-el-7-x86_64.repo
+    sudo wget http://nightlies.puppetlabs.com/puppetdb-latest/repo_configs/rpm/pl-puppetdb-latest-el-7-x86_64.repo
+    sudo yum -y install tree vim-enhanced git
+    sudo mkdir /var/cache/r10k
+    sudo cp /vagrant/r10k.yaml /etc/r10k.yaml
+  SHELL
+
+  # master install stuff
+  config_master_mid = <<-MASTERMID
+    sudo yum -y install puppetserver
+    sudo /opt/puppetlabs/puppet/bin/gem install r10k --no-ri --no-rdoc --verbose
+    sudo rm -rf /etc/puppetlabs/code/environments/production
+    sudo r10k deploy environment -p
+  MASTERMID
+
+  # agent install stuff
+  config_agent_mid = <<-AGENTMID
+    sudo yum -y install puppet-agent
+  AGENTMID
+
+  # everyone symlink and find out about the puppet master.
+  config_everyone_post = <<-EVERYONEPOST
+    sudo /opt/puppetlabs/bin/puppet apply /vagrant/symlinks.pp
+    sudo puppet config set server master.example.com
+  EVERYONEPOST
+
+  # master config stuff
+  config_master_post = <<-MASTERPOST
+    sudo puppet apply /vagrant/master-config-edits.pp
+  MASTERPOST
+  # create autosign.conf file
+  config_master_autosign = 'echo "' + (1..agents).to_a.map {|i| "agent#{i}.example.com"}.join('\n') + '" > /etc/puppetlabs/puppet/autosign.conf'
+
+  # ------------ OK DONE --------------
 
   config.vm.define 'master' do |node|
     node.vm.hostname = 'master.example.com'
@@ -19,15 +65,14 @@ Vagrant.configure(2) do |config|
       v.vmx["memsize"] = "2048"
       v.vmx["numvcpus"] = "2"
     end
+    config.vm.provision "shell", inline: (config_everyone_pre + config_master_mid + config_everyone_post + config_master_post + config_master_autosign)
   end
-
-  # How many agents do you want?
-  agents = 1
 
   agents.times do |i|
     agent_id = i.next.to_s
     config.vm.define "agent#{agent_id}" do |node|
       node.vm.hostname = "agent#{agent_id}.example.com"
+      config.vm.provision "shell", inline: (config_everyone_pre + config_agent_mid + config_everyone_post)
     end
 
   end
@@ -39,15 +84,4 @@ Vagrant.configure(2) do |config|
   # the path on the guest; optional third argument is options.
   # config.vm.synced_folder "../data", "/vagrant_data"
 
-  # Add latest nightly foss repos:
-  config.vm.provision "shell", inline: <<-SHELL
-    sudo service firewalld stop
-    cd /etc/yum.repos.d
-    sudo wget http://nightlies.puppetlabs.com/puppet-agent-latest/repo_configs/rpm/pl-puppet-agent-latest-el-7-x86_64.repo
-    sudo wget http://nightlies.puppetlabs.com/puppetserver-latest/repo_configs/rpm/pl-puppetserver-latest-el-7-x86_64.repo
-    sudo wget http://nightlies.puppetlabs.com/puppetdb-latest/repo_configs/rpm/pl-puppetdb-latest-el-7-x86_64.repo
-    sudo yum -y install tree vim-enhanced git
-    sudo mkdir /var/cache/r10k
-    sudo cp /vagrant/r10k.yaml /etc/r10k.yaml
-  SHELL
 end
