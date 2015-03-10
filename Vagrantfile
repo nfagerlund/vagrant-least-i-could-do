@@ -18,7 +18,7 @@ Vagrant.configure(2) do |config|
   config.hostmanager.manage_host = true
 
   # ------------ LET'S PROVISION ---------------
-  # This goes in order, deleting everything not relevant to the role.
+  # Concat these in order.
   # config fragment for all boxes:
   config_everyone_pre = <<-SHELL
     sudo service firewalld stop
@@ -27,35 +27,30 @@ Vagrant.configure(2) do |config|
     sudo wget http://nightlies.puppetlabs.com/puppetserver-latest/repo_configs/rpm/pl-puppetserver-latest-el-7-x86_64.repo
     sudo wget http://nightlies.puppetlabs.com/puppetdb-latest/repo_configs/rpm/pl-puppetdb-latest-el-7-x86_64.repo
     sudo yum -y install tree vim-enhanced git
-    sudo mkdir /var/cache/r10k
-    sudo cp /vagrant/r10k.yaml /etc/r10k.yaml
+    sudo yum -y install puppet-agent
+    sudo /opt/puppetlabs/bin/puppet apply /vagrant/symlinks.pp
+    sudo puppet config set server master.example.com
   SHELL
 
-  # master install stuff
+  # master install and deploy stuff
+  list_of_agents = (1..agents).to_a.map {|i| "agent#{i}.example.com"}.join("\n")
+
   config_master_mid = <<-MASTERMID
     sudo yum -y install puppetserver
     sudo /opt/puppetlabs/puppet/bin/gem install r10k --no-ri --no-rdoc --verbose
+
+    sudo echo "#{list_of_agents}" > /etc/puppetlabs/puppet/autosign.conf
+
+    sudo mkdir /var/cache/r10k
+    sudo cp /vagrant/r10k.yaml /etc/r10k.yaml
     sudo rm -rf /etc/puppetlabs/code/environments/production
     sudo r10k deploy environment -p
   MASTERMID
 
-  # agent install stuff
-  config_agent_mid = <<-AGENTMID
-    sudo yum -y install puppet-agent
-  AGENTMID
-
-  # everyone symlink and find out about the puppet master.
-  config_everyone_post = <<-EVERYONEPOST
-    sudo /opt/puppetlabs/bin/puppet apply /vagrant/symlinks.pp
-    sudo puppet config set server master.example.com
-  EVERYONEPOST
-
-  # master config stuff
+  # hairy master config stuff that needs revision
   config_master_post = <<-MASTERPOST
     sudo puppet apply /vagrant/master-config-edits.pp
   MASTERPOST
-  # create autosign.conf file
-  config_master_autosign = 'echo "' + (1..agents).to_a.map {|i| "agent#{i}.example.com"}.join('\n') + '" > /etc/puppetlabs/puppet/autosign.conf'
 
   # ------------ OK DONE --------------
 
@@ -65,14 +60,14 @@ Vagrant.configure(2) do |config|
       v.vmx["memsize"] = "2048"
       v.vmx["numvcpus"] = "2"
     end
-    config.vm.provision "shell", inline: (config_everyone_pre + config_master_mid + config_everyone_post + config_master_post + config_master_autosign)
+    config.vm.provision "shell", inline: (config_everyone_pre + config_master_mid + config_master_post)
   end
 
   agents.times do |i|
     agent_id = i.next.to_s
     config.vm.define "agent#{agent_id}" do |node|
       node.vm.hostname = "agent#{agent_id}.example.com"
-      config.vm.provision "shell", inline: (config_everyone_pre + config_agent_mid + config_everyone_post)
+      config.vm.provision "shell", inline: (config_everyone_pre)
     end
 
   end
