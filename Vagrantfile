@@ -11,7 +11,7 @@ Vagrant.configure(2) do |config|
   # enable vagrant-hostmanager plugin (vagrant plugin install vagrant-hostmanager)
   config.hostmanager.enabled = true
   # this one lets it manage a fenced-off part of /etc/hosts on your host machine, so you can access your VMs with a web browser or whatevs.
-  config.hostmanager.manage_host = true
+  # config.hostmanager.manage_host = true
 
   config.vm.define 'master' do |node|
     node.vm.hostname = 'master.example.com'
