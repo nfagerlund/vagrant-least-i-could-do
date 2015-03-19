@@ -4,6 +4,14 @@
 Vagrant.configure(2) do |config|
   # https://docs.vagrantup.com.
 
+  require 'yaml'
+  require 'pathname'
+  config_file = Pathname.new(__FILE__).parent + 'vagrant_config.yaml'
+  config_data = YAML.load(config_file.read)
+
+  # How many agents do you want?
+  agents = config_data['agents'] || 1
+
   # boxes at https://vagrantcloud.com/puppetlabs. you want one of the "-nocm" ones.
   config.vm.box = "puppetlabs/centos-7.0-64-nocm"
   # I think this box defaults to 512 MB ram and 1 CPU.
@@ -11,7 +19,7 @@ Vagrant.configure(2) do |config|
   # enable vagrant-hostmanager plugin (vagrant plugin install vagrant-hostmanager)
   config.hostmanager.enabled = true
   # this one lets it manage a fenced-off part of /etc/hosts on your host machine, so you can access your VMs with a web browser or whatevs.
-  # config.hostmanager.manage_host = true
+  config.hostmanager.manage_host = config_data['dns_on_host'] || false
 
   config.vm.define 'master' do |node|
     node.vm.hostname = 'master.example.com'
@@ -20,9 +28,6 @@ Vagrant.configure(2) do |config|
       v.vmx["numvcpus"] = "2"
     end
   end
-
-  # How many agents do you want?
-  agents = 1
 
   (1..agents).each do |i|
     config.vm.define "agent#{i}" do |node|

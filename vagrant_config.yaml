@@ -1,0 +1,4 @@
+---
+agents: 1
+auto_install: false
+dns_on_host: false
