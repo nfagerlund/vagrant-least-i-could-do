@@ -24,12 +24,10 @@ Vagrant.configure(2) do |config|
   # How many agents do you want?
   agents = 1
 
-  agents.times do |i|
-    agent_id = i.next.to_s
-    config.vm.define "agent#{agent_id}" do |node|
-      node.vm.hostname = "agent#{agent_id}.example.com"
+  (1..agents).each do |i|
+    config.vm.define "agent#{i}" do |node|
+      node.vm.hostname = "agent#{i}.example.com"
     end
-
   end
 
   # forwarded port example: "localhost:8080" will access port 80 on guest
