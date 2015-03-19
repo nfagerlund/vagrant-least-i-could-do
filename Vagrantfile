@@ -41,7 +41,10 @@ Vagrant.configure(2) do |config|
 
   list_of_agents = (1..agents).map {|i| "agent#{i}.example.com"}.join("\n")
 
-  # Last line is hairy master config stuff that needs revision
+  # Last line is hairy master config stuff that needs revision... but only after
+  # TK-167 (hocon array settings) is resolved, and the Puppet Server java
+  # defaults get more clever.
+  # The sed commands are in another file because I didn't feel like wrestling with double- or triple-escaping on those backslashes.
   provision_install_master = provision_install_agent + <<-MASTER
     yum -y install puppetserver
     echo "PARDON THE WAIT HERE, Installing r10k takes like forever."
@@ -52,7 +55,7 @@ Vagrant.configure(2) do |config|
     rm -rf /etc/puppetlabs/code/environments/production
     r10k deploy environment -p
 
-    puppet apply /vagrant/master-config-edits.pp
+    /vagrant/master-config-edits.sh
   MASTER
 
   config.vm.define 'master' do |node|
