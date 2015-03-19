@@ -40,14 +40,14 @@ Vagrant.configure(2) do |config|
   # config.vm.synced_folder "../data", "/vagrant_data"
 
   # Add latest nightly foss repos:
-  config.vm.provision "shell", inline: <<-SHELL
-    sudo service firewalld stop
+  config.vm.provision "shell", privileged: true, inline: <<-SHELL
+    service firewalld stop
     cd /etc/yum.repos.d
-    sudo wget http://nightlies.puppetlabs.com/puppet-agent-latest/repo_configs/rpm/pl-puppet-agent-latest-el-7-x86_64.repo
-    sudo wget http://nightlies.puppetlabs.com/puppetserver-latest/repo_configs/rpm/pl-puppetserver-latest-el-7-x86_64.repo
-    sudo wget http://nightlies.puppetlabs.com/puppetdb-latest/repo_configs/rpm/pl-puppetdb-latest-el-7-x86_64.repo
-    sudo yum -y install tree vim-enhanced git
-    sudo mkdir /var/cache/r10k
-    sudo cp /vagrant/r10k.yaml /etc/r10k.yaml
+    wget http://nightlies.puppetlabs.com/puppet-agent-latest/repo_configs/rpm/pl-puppet-agent-latest-el-7-x86_64.repo
+    wget http://nightlies.puppetlabs.com/puppetserver-latest/repo_configs/rpm/pl-puppetserver-latest-el-7-x86_64.repo
+    wget http://nightlies.puppetlabs.com/puppetdb-latest/repo_configs/rpm/pl-puppetdb-latest-el-7-x86_64.repo
+    yum -y install tree vim-enhanced git
+    mkdir /var/cache/r10k
+    cp /vagrant/r10k.yaml /etc/r10k.yaml
   SHELL
 end
