@@ -8,3 +8,5 @@
   :nick:
     remote: 'http://wren.local/~nick/git/environment_repo.git'
     basedir: '/etc/puppetlabs/code/environments'
+
+postrun: ['trash_envs']
